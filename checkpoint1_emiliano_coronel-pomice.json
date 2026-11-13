@@ -1,0 +1,191 @@
+{
+  "name": "checkpoint1_emiliano_coronel-pomice",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        96,
+        0
+      ],
+      "id": "e8b02077-c8c9-41c7-b0e7-e62ea6d4b099",
+      "name": "When chat message received",
+      "webhookId": "97a54734-7db3-4463-99c4-51ed59b60ae0"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "# ROL\nSos el Asistente de Biblioteca de equipos de Sechi, Medical Rigging (Transporte Sechi SRL), una empresa de rigging de equipos médicos de alta complejidad. Atendés consultas internas del equipo de oficina sobre los modelos de equipos que figuran en la Biblioteca de Sechi.\n\n# ÁMBITO\nLo que SÍ podés hacer:\n- Consultar la Biblioteca con la herramienta consultar_biblioteca_modelos.\n- Informar, para un modelo, únicamente los datos que la Biblioteca devuelve: marca, categoría, peso del bulto más pesado (en kg), cantidad de bultos, dimensiones, si es apilable, estado del registro, datos que faltan, trabajos registrados, equipos físicos registrados y observaciones.\n\nLo que NO podés hacer:\n- No calcular ni informar tarifas, costos ni presupuestos.\n- No elegir camión, tercero, grúa ni método de maniobra.\n- No confirmar si un equipo puede ingresar por un acceso, ascensor o vano.\n- No modificar, agregar ni borrar datos de la Biblioteca (solo tenés lectura).\n- No estimar, redondear ni completar datos que estén vacíos, en \"sin dato\", en \"a confirmar\" o en \"incompleto\".\n- No responder sobre un modelo con conocimiento general o de internet si la Biblioteca no lo tiene.\n\n# OBJETIVO\nEntregar a la persona que consulta una ficha clara y breve del modelo pedido, con exactamente los datos de la Biblioteca, y dejar explícito qué datos faltan para que Logística pueda completarlos.\n\n# REGLAS Y ESCALAMIENTO\n1. Siempre consultá la herramienta antes de responder sobre un modelo. Nunca respondas de memoria.\n2. Buscá por el nombre base del modelo, sin prefijos de categoría. Ejemplo: \"Voyager\" y no \"Mr Voyager\"; \"Pristina\" y no \"Mm Pristina\". Si la búsqueda no devuelve resultados, reintentá una sola vez con otra forma de escribir el nombre. No hagas más de dos consultas por modelo.\n3. El peso informado es el del bulto más pesado, no el peso total del equipo. Aclaralo siempre.\n4. Si un dato figura vacío, \"sin dato\", \"a confirmar\" o \"incompleto: falta packing list\", decilo textualmente. Jamás lo reemplaces por un valor propio.\n5. Formato de la respuesta: una línea por dato (Marca, Categoría, Peso del bulto más pesado, Cantidad de bultos, Dimensiones, Apilable, Datos que faltan), usando español rioplatense, tono cordial y directo, sin lenguaje inclusivo.\n6. Escalamiento: si el modelo no figura en la Biblioteca, si el estado del registro es INCOMPLETO, o si falta el peso o la cantidad de bultos, indicá de forma explícita: \"Corresponde consultar con Logística\".\n7. Si la consulta no es sobre un modelo de la Biblioteca (por ejemplo, precios, cotizaciones, rutas o accesos), no uses la herramienta, explicá que está fuera de tu alcance e indicá: \"Corresponde consultar con Logística\".\n8. La última línea de cada respuesta debe ser exactamente una de estas tres:\n   Estado: DATOS BASE COMPLETOS\n   Estado: INCOMPLETO - derivar a Logística\n   Estado: FUERA DE ALCANCE - derivar a Logística\n   Usá \"DATOS BASE COMPLETOS\" solo cuando la Biblioteca informa peso del bulto más pesado y cantidad de bultos.\n Usá \"INCOMPLETO\" cuando el modelo figura en la Biblioteca pero faltan datos, o cuando el modelo consultado no figura en la Biblioteca. Usá \"FUERA DE ALCANCE\" únicamente cuando la consulta no trata sobre un modelo de equipo (por ejemplo, precios, rutas o accesos).",
+          "maxIterations": 6,
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        272,
+        0
+      ],
+      "id": "2f012a2d-04c9-4aeb-9fba-d9d7b33226a5",
+      "name": "Asistente de Biblioteca"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-flash-lite-latest",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        256,
+        176
+      ],
+      "id": "8501fefd-abfd-42e7-a170-560712c994ed",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "zIGsIICF3BTf2bOX",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Esta herramienta consulta, en modo solo lectura, la Biblioteca de equipos y modelos de Sechi, Medical Rigging (una hoja de cálculo con un modelo por fila). Usala SIEMPRE que la persona pregunte por un modelo concreto de equipo médico: cuántos bultos tiene, cuánto pesa su bulto más pesado, de qué marca o categoría es, qué dimensiones tiene, si es apilable, qué datos faltan en su registro, cuántos trabajos o equipos físicos hay registrados o qué observaciones tiene. Es la única fuente válida para esas respuestas: no respondas de memoria.\nParámetro 'modelo': enviá solo el nombre base del modelo, sin prefijos de categoría como Mr, Mm, Ct o Up (ejemplo: 'Voyager', no 'Mr Voyager'). La búsqueda es por coincidencia exacta en la columna Modelo; si no devuelve filas, reintentá UNA sola vez con otra forma de escribir el nombre y, si sigue vacío, informá que el modelo no figura en la Biblioteca.\nNo la uses para: saludos, preguntas generales sobre equipos, precios, tarifas, presupuestos, rutas o accesos, ni para modelos que la persona no mencionó. Devuelve como máximo la fila del modelo pedido; nunca intentes listar toda la Biblioteca.",
+        "documentId": {
+          "__rl": true,
+          "value": "1Q77EI2LdR-Trut-VD50dzHrTeQbLGxvb6rPC_ZXoCjg",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Biblioteca_modelos"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "=Modelo",
+              "lookupValue": "={{ $fromAI('modelo', 'Nombre base del modelo de equipo a buscar, sin prefijos de categoria (ejemplo: Voyager)', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        432,
+        176
+      ],
+      "id": "48cff0e2-ceb7-48ce-964a-e2033120ad4a",
+      "name": "consultar_biblioteca_modelos",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Jr1mjY9NlTKCGCvz",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0CHHUXBZHU",
+          "mode": "list",
+          "cachedResultName": "biblioteca-sechi"
+        },
+        "text": "=:white_check_mark: *Tarea completada* - Asistente de Biblioteca de equipos (Sechi, Medical Rigging)\n*Consulta recibida:* {{ $('When chat message received').item.json.chatInput }}\n*Herramientas usadas:* {{ (($json.intermediateSteps || []).map(s => s.action.tool + ' ' + JSON.stringify(s.action.toolInput)).join(' | ')) || 'ninguna' }}\n*Pasos de herramienta ejecutados:* {{ ($json.intermediateSteps || []).length }}\n*Respuesta del agente:*\n{{ $json.output }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        0
+      ],
+      "id": "129e0964-373a-45b1-9010-8af89a8142aa",
+      "name": "Slack - Tarea completada",
+      "webhookId": "10eda533-a331-4b54-bc44-ff3df1515ceb",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "dwH0Ub66gOYl6scc",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente de Biblioteca",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_biblioteca_modelos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente de Biblioteca",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente de Biblioteca": {
+      "main": [
+        [
+          {
+            "node": "Slack - Tarea completada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Asistente de Biblioteca",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "6a7af9a5-4c6d-4c23-ab6a-f32871af7201",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ee5e22c4db4f1f2d6cb30de01b8db02beca9a3b5bd18239c2588fb32ece7526c"
+  },
+  "nodeGroups": [],
+  "id": "Aeo6ZAZkiFkpTFPE",
+  "tags": []
+}
