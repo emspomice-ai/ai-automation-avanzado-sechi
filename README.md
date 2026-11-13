@@ -31,15 +31,15 @@ Conectados al agente como extensiones laterales:
 ## Decisión sobre el modelo
 La consigna recomienda OpenAI o Anthropic. Este proyecto usa **Google Gemini** (`gemini-flash-lite-latest`) porque tiene tier gratuito continuo, algo necesario para un proyecto de varias semanas sin costo. Cambiarlo implica reemplazar un único nodo (Chat Model) sin tocar el resto del flujo.
 
-## Para importar y probar
-1. En n8n: Workflows > Import from file > elegir el `.json`.
-2. Subir la planilla de prueba de la Biblioteca a Google Sheets y pegar su ID en la herramienta (hoja `Biblioteca_modelos`).
-3. Elegir las credenciales de Gemini, Google Sheets y Slack, y el canal de Slack.
-4. Abrir el chat y probar:
-   - "¿Cuántos bultos tiene el Voyager y cuánto pesa el bulto más pesado?" (datos completos)
-   - "Pasame la ficha del Pristina" (registro incompleto: deriva a Logística)
-   - "¿Qué datos tenés del Magneton C?" (no figura en la planilla de prueba: deriva a Logística)
-   - "¿Cuánto cobramos por llevar un Voyager a La Pampa?" (fuera de alcance: deriva a Logística)
+## Pruebas realizadas
+El flujo se ejecutó manualmente en n8n con cuatro consultas, y en todas llegó el aviso de "Tarea completada" al canal de Slack de la Biblioteca:
+
+| Consulta | Comportamiento del agente |
+|---|---|
+| Cantidad de bultos y peso del bulto más pesado de un modelo con datos completos | Usó la herramienta una vez, informó los datos y cerró con "Estado: DATOS BASE COMPLETOS" |
+| Ficha de un modelo con registro incompleto | Informó lo que figura, marcó lo que falta sin inventar y derivó a Logística |
+| Modelo que no figura en la Biblioteca | Reintentó una vez con otro nombre, informó que no figura y derivó a Logística |
+| Consulta sobre tarifas | No usó la herramienta, explicó que está fuera de su alcance y derivó a Logística |
 
 ## Seguridad
 El archivo no contiene claves ni tokens. Las credenciales se vinculan en cada instancia de n8n. La herramienta es de solo lectura (mínimo privilegio).
